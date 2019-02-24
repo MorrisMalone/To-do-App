@@ -3,7 +3,6 @@ body {
     padding: 0;
     display: flex;
     font-family: 'Nunito', sans-serif;
-    background-color: rgba(0, 0, 0, 0.4);
     cursor: default;
 }
 
@@ -23,14 +22,13 @@ button:focus {
     width: 100%;
     max-width: 700px;
     margin: 0 auto;
-    padding: 20px;
     background: white;
 }
 
 #projects-container {
-    margin: 0 auto;
-    padding: 20px;
-    width: 90%;
+    box-sizing: border-box;
+    padding: 10px;
+    width: 100%;
     min-height: 90vh;
     display: flex;
     flex-direction: column;
@@ -196,16 +194,12 @@ button:focus {
 
 .task p {
     margin: 0;
-    padding: 0 5px 0 0;
+    padding: 0 5px;
 }
 
 .task i {
     color: rgb(158, 158, 158);
     cursor: pointer;
-}
-
-.task i:hover {
-    color: rgba(0, 128, 0, 0.774);
 }
 
 .task.done {
@@ -217,6 +211,10 @@ button:focus {
 .task.done i {
     color: rgb(56, 109, 201);
     animation: pop 0.1s;
+}
+
+.task.done p {
+    text-align: right;
 }
 
 .is-done {
@@ -341,3 +339,10 @@ textarea {
     border-color: #FF5722;
     color: #FF5722;
 }
+
+@media (max-width: 500px) {
+    #projects-container {
+        padding: 5px;
+    }
+}
+
