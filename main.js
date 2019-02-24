@@ -2,12 +2,11 @@
 // Projects class
 
 class Project {
-    constructor(title, dueDate, tasks = [], description = '', priority = 'low') {
+    constructor(title, dueDate, tasks = [], description = '') {
         this.title = title;
         this.dueDate = dueDate;
         this.tasks = tasks;               // array of tasks
         this.description = description;   // optional
-        this.priority = priority;         // low, medium, urgent (optional)
         this.done = false;
         this.countId = 0;
     }
@@ -57,9 +56,9 @@ class Project {
 // Projects container / controller
 
 class Controller {
-    constructor(projects = []) {
+    constructor(projects = [], countId = 0) {
         this.projects = projects;
-        this.countId = 0;
+        this.countId = countId;
     }
 
     createId() {
@@ -159,6 +158,7 @@ function showProject(project) {
     populateProjectInfos(project);
 
     addListenersCheck();
+    saveOnLocalStorage();
 }
 
 // ----------------------------------
@@ -169,6 +169,7 @@ function goHome() {
 
     controller.sortProjects();
     populateProjectsContainer(controller.projects);
+    saveOnLocalStorage();
 }
 
 // -----------------------------------
@@ -176,7 +177,6 @@ function goHome() {
 
 function populateProjectInfos(project) {
 
-    console.log(project);
     project.sortTasks();
 
     const nav = document.createElement('div');
@@ -187,10 +187,8 @@ function populateProjectInfos(project) {
     let tasks = '';
     
     if (project.tasks.length > 0) {
-        console.log(project);
 
         for (let i = 0; i < project.tasks.length; i++) {
-            console.log(project.tasks[i].done);
             project.tasks[i].done ? tasks += `<div data-taskId='${project.tasks[i].id}' data-projectId='${project.id}' class='task done'><p>${project.tasks[i].title}</p><i class="far fa-check-circle"></i></div>`
                         : tasks += `<div data-taskId='${project.tasks[i].id}' data-projectId='${project.id}' class='task'><p>${project.tasks[i].title}</p><i class="far fa-check-circle"></i></div>`;
         }
@@ -237,6 +235,8 @@ function populateProjectInfos(project) {
     let navig = document.querySelector('.nav');
     navig.appendChild(arrowBack);
     navig.appendChild(edit);
+
+    saveOnLocalStorage();
 }
 
 function checkIt(e) {
@@ -248,6 +248,7 @@ function checkIt(e) {
     task.done = !task.done;
 
     e.target.parentNode.classList.toggle('done');
+    saveOnLocalStorage();
 }
 
 function addListenersCheck() {
@@ -261,6 +262,7 @@ function addListenersCheck() {
 function editProject(project) {
     project.sortTasks();
     displayNewProject(project);
+    saveOnLocalStorage();
 }
 
 // ---------------------------------------------
@@ -334,20 +336,28 @@ function displayNewProject(project) {
 
     addATask('tasks-section');
 
-    const addATaskButton = document.createElement('div');
+    const addATaskButton = document.createElement('div'); // add a new task button
     addATaskButton.classList.add('add-a-task');
     addATaskButton.textContent = 'new task';
     addATaskButton.addEventListener('click', function() {addATask('tasks-section')});
 
     projectsContainer.appendChild(addATaskButton);
 
-    if (project) {
+    if (project) { // create delete project button
+        const deleteProjectButton = document.createElement('div');
+        deleteProjectButton.classList.add('delete-project-button');
+        deleteProjectButton.textContent = 'delete this project';
+        deleteProjectButton.addEventListener('click', function() {deleteThisProject(project)});
+
+        projectsContainer.appendChild(deleteProjectButton);
+    }
+
+    if (project) { // fill up the form with existing values of this project
         titleInput.setAttribute('value', project.title);
         dateInput.setAttribute('value', dateFns.format(new Date(project.dueDate), 'YYYY-MM-DD'));
         infosInput.textContent = project.description;
     }
-
-
+    saveOnLocalStorage();
 }
 
 //----------------------------------------------
@@ -393,6 +403,7 @@ function createProject() {
         alert('Please add at least one task to your project');
     }
 
+    saveOnLocalStorage();
 }
 
 // ----------------------------------
@@ -402,6 +413,14 @@ function udpateProject(project) {
     controller.deleteProject(project.id);
     
     createProject();
+}
+
+// --------------------------------------
+// delete existing project
+
+function deleteThisProject(project) {
+    controller.deleteProject(project.id);
+    goHome();
 }
 
 //-----------------------------------------//
@@ -463,35 +482,56 @@ function addATask(tasksContainer, value, done) {
 // starting point for Testings
 
 const today = new Date();
+let controller;
 
-let controller = new Controller();
+if (JSON.parse(localStorage.getItem('controller'))) {
+    let projectsList = JSON.parse(localStorage.getItem('controller')).projects;
+    let projectsListTransformed = projectsList.map(project => {
+        let theProject = new Project(project.title, project.dueDate, project.tasks, project.description);
+        theProject.countId = project.countId;
+        return theProject;
+    });
 
-let projectOne = new Project('Trip to Mallorca', new Date(2019, 2, 2));
-projectOne.description = 'One week in Mallorca with Pia and her parents 😃';
-projectOneTasks = [
-    'Prepare backpack',
-    'get shortpants',
-    'Prepare camera and charge batteries',
-    'Passeport',
-    'Be ready to have a blast'
-];
+    controller = new Controller();
+    projectsListTransformed.forEach(project => controller.addProject(project));
 
-projectOneTasks.forEach(task => projectOne.addTask(task));
-controller.addProject(projectOne);
+} else {
+    controller = new Controller();
+}
 
-let projectTwo = new Project('Create a Battleship Game', new Date(2019, 3, 7));
-projectTwo.description = 'Aim: develop a basic battleship game with drag and drop to place the boats. Make a decent AI too.';
-projectTwoTasks = [
-    'Think before starting coding',
-    'Create the board',
-    'Create the player',
-    'DOM interaction system',
-    'and much more!!!!'
-];
-projectTwoTasks.forEach(task => projectTwo.addTask(task));
-controller.addProject(projectTwo);
+if (!localStorage.getItem('controller')) {
+    let projectOne = new Project('Trip to Mallorca', new Date(2019, 2, 2));
+    projectOne.description = 'One week in Mallorca with Pia and her parents 😃';
+    projectOneTasks = [
+        'Prepare backpack',
+        'get shortpants',
+        'Prepare camera and charge batteries',
+        'Passeport',
+        'Be ready to have a blast'
+    ];
 
+    projectOneTasks.forEach(task => projectOne.addTask(task));
+    controller.addProject(projectOne);
+
+    let projectTwo = new Project('Create a Battleship Game', new Date(2019, 3, 7));
+    projectTwo.description = 'Aim: develop a basic battleship game with drag and drop to place the boats. Make a decent AI too.';
+    projectTwoTasks = [
+        'Think before starting coding',
+        'Create the board',
+        'Create the player',
+        'DOM interaction system',
+        'and much more!!!!'
+    ];
+    projectTwoTasks.forEach(task => projectTwo.addTask(task));
+    controller.addProject(projectTwo);
+}
 
 controller.sortProjects();
 populateProjectsContainer(controller.projects);
 
+
+// -------------------- 
+// local storage
+function saveOnLocalStorage() {
+    localStorage.setItem('controller', JSON.stringify(controller));
+}

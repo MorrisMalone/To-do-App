@@ -282,7 +282,7 @@ textarea {
 }
 
 #tasks-section {
-    border-top: 1px solid rgbargba(2, 137, 209, 0.637);
+    border-top: 1px solid rgba(2, 137, 209, 0.637);
 }
 
 .task-input {
@@ -324,4 +324,20 @@ textarea {
     padding: 2px;
     color: #FF5722;
     cursor: pointer;
+}
+
+.delete-project-button {
+    width: fit-content;
+    border: 2px solid rgba(255, 86, 34, 0.425);
+    color: rgba(255, 86, 34, 0.425);
+    margin: 10px;
+    padding: 5px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.1s ease;
+}
+
+.delete-project-button:hover {
+    border-color: #FF5722;
+    color: #FF5722;
 }
