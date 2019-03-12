@@ -5,13 +5,13 @@ class Project {
     constructor(title, dueDate, tasks = [], description = '') {
         this.title = title;
         this.dueDate = dueDate;
-        this.tasks = tasks;               // array of tasks
-        this.description = description;   // optional
+        this.tasks = tasks; // array of tasks
+        this.description = description; // optional
         this.done = false;
         this.countId = 0;
     }
 
-    createId() {                          // return a unique id for a task (related to this project)
+    createId() { // return a unique id for a task (related to this project)
         return this.countId++;
     }
 
@@ -27,7 +27,7 @@ class Project {
         })
     }
 
-    addTask(title, done) {          // create the task (should I make a task class?)
+    addTask(title, done) { // create the task (should I make a task class?)
         let task = {
             id: this.createId(),
             title: title,
@@ -37,7 +37,7 @@ class Project {
     }
 
     deleteTask(taskId) {
-        this.tasks = this.tasks.filter(task => task.id != taskId);    // filter out
+        this.tasks = this.tasks.filter(task => task.id != taskId); // filter out
     }
 
     getDaysToToday() {
@@ -53,7 +53,7 @@ class Project {
 }
 
 //--------------------------------------------
-// Projects container / controller
+// Projects container / controller / to store the projects created
 
 class Controller {
     constructor(projects = [], countId = 0) {
@@ -75,44 +75,41 @@ class Controller {
     }
 
     deleteProject(projectId) {
-        this.projects = this.projects.filter(project => project.id != projectId);  // doesn't suppress but filter out
+        this.projects = this.projects.filter(project => project.id != projectId); // doesn't suppress but filter out
     }
 
 }
 
 // ------------------------------
-// DOM Stuff
+// DOM Stuff to create the page that displays the projects and their main infos
 
 const projectsContainer = document.getElementById('projects-container');
 
 function populateProjectsContainer(arrOfProjects) {
 
-    const addNewProject = document.createElement('div');
+    const addNewProject = document.createElement('div'); // button to create a new project
     addNewProject.classList.add('add-new-project');
     addNewProject.innerHTML = `<i class="fas fa-plus"></i> Create new project`;
 
-    addNewProject.addEventListener('click', function() {displayNewProject(null)});
+    addNewProject.addEventListener('click', function () {
+        displayNewProject(null)
+    });
 
     projectsContainer.appendChild(addNewProject);
 
     arrOfProjects.forEach(project => {
-        const projectDiv = document.createElement('div'); // create div which contains the project title + infos
+        const projectDiv = document.createElement('div'); // create div which containerIconAndDays the project title + infos
         projectDiv.setAttribute('id', `project-${project.id}`);
         projectDiv.classList.add('project');
 
-        const projectTitleH3 = document.createElement('h3');   // create h3 tag for title
+        const projectTitleH3 = document.createElement('h3'); // create h3 tag for title
         projectTitleH3.classList.add('project-title');
         projectTitleH3.textContent = project.title;
 
-        //---
-        const contains = document.createElement('div');
-        contains.classList.add('flex-centered');
-        contains.classList.add('project-is-done');
-        //---
-        const daysContainer = document.createElement('div');   // div which contains distance to dueDate and date
+        const daysContainer = document.createElement('div'); // div which containerIconAndDays distance to dueDate and date
         daysContainer.classList.add('days-container');
 
-        const daysToDateDiv = document.createElement('div');   // display number of calendar days to due date from today
+        const daysToDateDiv = document.createElement('div'); // display number of calendar days to due date from today
         daysToDateDiv.textContent = `${project.getDaysToToday()}`;
         daysToDateDiv.classList.add('days-distance');
         daysToDateDiv.classList.add('flex-centered');
@@ -123,25 +120,34 @@ function populateProjectsContainer(arrOfProjects) {
 
         daysContainer.appendChild(daysToDateDiv);
         daysContainer.appendChild(dateDiv);
-        //---
-        if (project.isDone()) {
-            contains.innerHTML += `<i class="far fa-check-circle"></i>`;
-        }
-        contains.appendChild(daysContainer);
 
-
+        // put the project div in form
         projectDiv.appendChild(projectTitleH3);
-        projectDiv.appendChild(contains);
-        //projectDiv.appendChild(daysContainer);
+
+        if (project.isDone()) { // if a project is done then add done-icon
+            const containerIconAndDays = document.createElement('div');
+            containerIconAndDays.classList.add('flex-centered');
+            containerIconAndDays.classList.add('project-is-done');
+            containerIconAndDays.innerHTML += `<i class="far fa-check-circle"></i>`;
+            containerIconAndDays.appendChild(daysContainer);
+            projectDiv.appendChild(containerIconAndDays);
+
+        } else projectDiv.appendChild(daysContainer);
+
         projectDiv.setAttribute('data-type', 'project');
 
-        projectDiv.addEventListener('click', function() {showProject(project)});
+        projectDiv.addEventListener('click', function () {
+            showProject(project)
+        });
+
         projectsContainer.appendChild(projectDiv);
 
     })
 }
 
+// ------------------------------------------
 // function to clear the projects container
+// basically to clear between pages
 
 function clearProjectsContainer() {
     while (projectsContainer.children.length > 0) {
@@ -177,66 +183,97 @@ function goHome() {
 
 function populateProjectInfos(project) {
 
-    project.sortTasks();
+    project.sortTasks(); // display the undone tasks on
 
+    createNavBar(project);
+
+    addProjectInfos(project);
+    //-------------------------------------------------
+    // make the task div/section
+    createTasksDiv(project);
+
+    saveOnLocalStorage();
+}
+
+//-----------------------------------------
+// create nav bar for a displayed project
+
+function createNavBar(project) {
+    // make the nav bar
     const nav = document.createElement('div');
     nav.classList.add('nav');
 
-    projectsContainer.appendChild(nav);
+    // to go back to main page
+    const arrowBack = document.createElement('div');
+    arrowBack.innerHTML = `<i class="far fa-arrow-alt-circle-left"></i>`;
+    arrowBack.classList.add('arrow-back');
+    arrowBack.addEventListener('click', goHome);
 
+    // to edit this displayed project
+    const edit = document.createElement('div');
+    edit.innerHTML = `<i class="far fa-edit"></i>`;
+    edit.classList.add('edit');
+    edit.addEventListener('click', function () {
+        editProject(project)
+    });
+
+    nav.appendChild(arrowBack);
+    nav.appendChild(edit);
+    projectsContainer.appendChild(nav);
+}
+
+//-----------------------------------------
+// make the project-main-infos div (title, description, days left...)
+
+function addProjectInfos(project) {
+
+    let projectInfosInnerHtml = `
+    <section data-projectId="${project.id}" class="show-project">
+    <div class='project-display'>
+    <h3 class='project-title'>${project.title}</h3>
+    <div class='days-container'>
+    <div class='days-distance flex-centered'>${project.getDaysToToday()}</div>
+    <div class='date'>${dateFns.format(project.dueDate, 'DD.MM.YY')}</div>
+    </div>
+    </div>
+    ${project.description ? `<div class='description'>${project.description}</div>` : ''}
+    </section>
+    `;
+
+    const projectInfos = document.createElement('div');
+    projectInfos.innerHTML += projectInfosInnerHtml;
+
+    projectsContainer.appendChild(projectInfos);
+}
+
+// --------------------------------------------
+// create the tasks div for a displayed project
+
+function createTasksDiv(project) {
     let tasks = '';
-    
+
     if (project.tasks.length > 0) {
 
         for (let i = 0; i < project.tasks.length; i++) {
-            project.tasks[i].done ? tasks += `<div data-taskId='${project.tasks[i].id}' data-projectId='${project.id}' class='task done'><p>${project.tasks[i].title}</p><i class="far fa-check-circle"></i></div>`
-                        : tasks += `<div data-taskId='${project.tasks[i].id}' data-projectId='${project.id}' class='task'><p>${project.tasks[i].title}</p><i class="far fa-check-circle"></i></div>`;
+            project.tasks[i].done ? tasks += `<div data-taskId='${project.tasks[i].id}' data-projectId='${project.id}' class='task done'><p>${project.tasks[i].title}</p><i class="far fa-check-circle"></i></div>` :
+                tasks += `<div data-taskId='${project.tasks[i].id}' data-projectId='${project.id}' class='task'><p>${project.tasks[i].title}</p><i class="far fa-check-circle"></i></div>`;
         }
-
-        /*
-        project.tasks.forEach((task) => {
-            task.done ? tasks += `<div data-taskId='${task.id}' data-projectId='${project.id}' class='task done'><p>${task.title}</p><i class="far fa-check-circle"></i></div>`
-                        : tasks += `<div data-taskId='${task.id}' data-projectId='${project.id}' class='task'><p>${task.title}</p><i class="far fa-check-circle"></i></div>`;
-        });
-        */
     }
 
-    let theDiv = `
-        <section data-projectId="${project.id}" class="show-project">
-            <div class='project-display'>
-                <h3 class='project-title'>${project.title}</h3>
-                <div class='days-container'>
-                    <div class='days-distance flex-centered'>${project.getDaysToToday()}</div>
-                    <div class='date'>${dateFns.format(project.dueDate, 'DD.MM.YY')}</div>
-                </div>
-            </div>
-            ${project.description ? `<div class='description'>${project.description}</div>` : ''}
-        </section>
-    `;
-
-    projectsContainer.innerHTML += theDiv;
-    
     const tasksSection = document.createElement('section');
     tasksSection.classList.add('tasks-section');
     tasksSection.innerHTML = tasks;
 
     projectsContainer.appendChild(tasksSection);
 
-    const arrowBack = document.createElement('div');
-    arrowBack.innerHTML = `<i class="far fa-arrow-alt-circle-left"></i>`;
-    arrowBack.classList.add('arrow-back');
-    arrowBack.addEventListener('click', goHome);
+}
 
-    const edit = document.createElement('div');
-    edit.innerHTML = `<i class="far fa-edit"></i>`;
-    edit.classList.add('edit');
-    edit.addEventListener('click', function() {editProject(project)});  // trigger the edition of the project
+// ------------------------------------------
+// to toggle if a task is done or not and save it to the project
 
-    let navig = document.querySelector('.nav');
-    navig.appendChild(arrowBack);
-    navig.appendChild(edit);
-
-    saveOnLocalStorage();
+function addListenersCheck() {
+    const checkers = document.querySelectorAll('.fa-check-circle');
+    checkers.forEach(checker => checker.addEventListener('click', checkIt));
 }
 
 function checkIt(e) {
@@ -251,10 +288,6 @@ function checkIt(e) {
     saveOnLocalStorage();
 }
 
-function addListenersCheck() {
-    const checkers = document.querySelectorAll('.fa-check-circle');
-    checkers.forEach(checker => checker.addEventListener('click', checkIt));
-}
 
 // ----------------------------------------------
 // to edit an existing project
@@ -266,7 +299,7 @@ function editProject(project) {
 }
 
 // ---------------------------------------------
-// form for the new project
+// form for a new project
 
 function displayNewProject(project) {
     clearProjectsContainer();
@@ -284,7 +317,9 @@ function displayNewProject(project) {
     saveProject.innerHTML = `${project ? 'update project' : 'save this project'} <i class="far fa-save"></i>`;
 
     if (project) {
-        saveProject.addEventListener('click', function(){udpateProject(project)});
+        saveProject.addEventListener('click', function () {
+            udpateProject(project)
+        });
 
     } else saveProject.addEventListener('click', createProject);
 
@@ -292,7 +327,7 @@ function displayNewProject(project) {
     nav.appendChild(saveProject);
 
     projectsContainer.appendChild(nav);
-    
+
     // project section -------------------
 
     const projectSection = document.createElement('section');
@@ -325,7 +360,7 @@ function displayNewProject(project) {
     const tasksSection = document.createElement('section');
     tasksSection.setAttribute('id', 'tasks-section');
     tasksSection.setAttribute('data-count', '0');
-    
+
     projectsContainer.appendChild(tasksSection);
 
     if (project) {
@@ -339,7 +374,9 @@ function displayNewProject(project) {
     const addATaskButton = document.createElement('div'); // add a new task button
     addATaskButton.classList.add('add-a-task');
     addATaskButton.textContent = 'new task';
-    addATaskButton.addEventListener('click', function() {addATask('tasks-section')});
+    addATaskButton.addEventListener('click', function () {
+        addATask('tasks-section')
+    });
 
     projectsContainer.appendChild(addATaskButton);
 
@@ -347,16 +384,17 @@ function displayNewProject(project) {
         const deleteProjectButton = document.createElement('div');
         deleteProjectButton.classList.add('delete-project-button');
         deleteProjectButton.textContent = 'delete this project';
-        deleteProjectButton.addEventListener('click', function() {deleteThisProject(project)});
+        deleteProjectButton.addEventListener('click', function () {
+            deleteThisProject(project)
+        });
 
         projectsContainer.appendChild(deleteProjectButton);
-    }
 
-    if (project) { // fill up the form with existing values of this project
         titleInput.setAttribute('value', project.title);
         dateInput.setAttribute('value', dateFns.format(new Date(project.dueDate), 'YYYY-MM-DD'));
         infosInput.textContent = project.description;
     }
+
     saveOnLocalStorage();
 }
 
@@ -367,7 +405,7 @@ function createProject() {
     const title = document.querySelector('.title-input').value;
     const description = document.querySelector('.text-area').value;
     const dueDate = document.querySelector('.date-input').value;
-    
+
     const tasksSection = document.querySelector('#tasks-section');
     const tasksSectionChildren = tasksSection.childNodes;
 
@@ -411,7 +449,7 @@ function createProject() {
 
 function udpateProject(project) {
     controller.deleteProject(project.id);
-    
+
     createProject();
 }
 
@@ -478,6 +516,12 @@ function addATask(tasksContainer, value, done) {
     tasksSection.appendChild(taskDiv);
 }
 
+// -------------------- 
+// local storage
+function saveOnLocalStorage() {
+    localStorage.setItem('controller', JSON.stringify(controller));
+}
+
 // ---------------------------------
 // starting point for Testings
 
@@ -528,10 +572,3 @@ if (!localStorage.getItem('controller')) {
 
 controller.sortProjects();
 populateProjectsContainer(controller.projects);
-
-
-// -------------------- 
-// local storage
-function saveOnLocalStorage() {
-    localStorage.setItem('controller', JSON.stringify(controller));
-}
